@@ -43,7 +43,9 @@
             }
 
             const requestData = {
-                record_id: recordId
+                arguments: JSON.stringify({
+                    record_id: recordId
+                })
             };
 
             ZOHO.BIGIN.FUNCTIONS.execute(
