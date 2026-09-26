@@ -12,10 +12,12 @@
         body {
             font-family: Arial, sans-serif;
             padding: 24px;
+            color: #222;
         }
 
         #status {
             font-size: 16px;
+            line-height: 1.5;
         }
 
         #error {
@@ -24,16 +26,47 @@
             color: #b00020;
         }
 
+        #actions {
+            display: none;
+            margin-top: 22px;
+        }
+
+        button {
+            padding: 9px 18px;
+            margin-right: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #regenerateButton {
+            background: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+        }
+
+        #cancelButton {
+            background: white;
+            color: #333;
+        }
+
         #manualLink {
             display: none;
-            margin-top: 16px;
+            margin-top: 18px;
         }
     </style>
 </head>
 
 <body>
 
-    <div id="status">Generating Writer document...</div>
+    <div id="status">Checking for an existing Writer merge...</div>
+
+    <div id="actions">
+        <button id="regenerateButton">Regenerate</button>
+        <button id="cancelButton">Cancel</button>
+    </div>
+
     <div id="error"></div>
 
     <a id="manualLink" href="#" target="_blank">
@@ -41,28 +74,57 @@
     </a>
 
     <script>
-        ZOHO.embeddedApp.on("PageLoad", function(data) {
+        let currentRecordId = null;
 
-            const recordId = data.EntityId;
-
-            if (!recordId) {
-                document.getElementById("status").textContent =
-                    "Unable to identify the current Bigin record.";
-                return;
-            }
-
+        function executeWriterFunction(payload) {
             const requestData = {
-                arguments: JSON.stringify({
-                    record_id: recordId
-                })
+                arguments: JSON.stringify(payload)
             };
 
-            ZOHO.BIGIN.FUNCTIONS.execute(
+            return ZOHO.BIGIN.FUNCTIONS.execute(
                 "writermerge__writer_merge_function",
                 requestData
-            ).then(function(response) {
+            );
+        }
 
-                console.log("Function response:", response);
+        function formatDateTime(value) {
+            if (!value) {
+                return "an earlier time";
+            }
+
+            const parsedDate = new Date(value);
+
+            if (isNaN(parsedDate.getTime())) {
+                return value;
+            }
+
+            return parsedDate.toLocaleString();
+        }
+
+        function showError(message) {
+            document.getElementById("status").textContent =
+                "Unable to generate document.";
+
+            document.getElementById("error").textContent =
+                message || "An unexpected error occurred.";
+
+            document.getElementById("actions").style.display = "none";
+        }
+
+        function generateDocument() {
+            document.getElementById("status").textContent =
+                "Generating Writer document...";
+
+            document.getElementById("actions").style.display = "none";
+            document.getElementById("error").textContent = "";
+            document.getElementById("manualLink").style.display = "none";
+
+            executeWriterFunction({
+                record_id: currentRecordId,
+                action: "generate"
+            }).then(function(response) {
+
+                console.log("Generate response:", response);
 
                 if (response.status === "success" && response.url) {
 
@@ -83,26 +145,97 @@
                     }
 
                 } else {
-
-                    document.getElementById("status").textContent =
-                        "Unable to generate document.";
-
-                    document.getElementById("error").textContent =
+                    const message =
                         response.message ||
                         JSON.stringify(response, null, 2);
+
+                    showError(message);
                 }
 
-            }, function(error) {
+            }).catch(function(error) {
 
-                console.error("Function error:", error);
+                console.error("Generate error:", error);
 
-                document.getElementById("status").textContent =
-                    "Unable to generate document.";
-
-                document.getElementById("error").textContent =
+                const message =
                     error.message ||
                     JSON.stringify(error, null, 2);
+
+                showError(message);
             });
+        }
+
+        function checkExistingMerge() {
+            executeWriterFunction({
+                record_id: currentRecordId,
+                action: "check"
+            }).then(function(response) {
+
+                console.log("Check response:", response);
+
+                if (response.status !== "success") {
+                    const message =
+                        response.message ||
+                        JSON.stringify(response, null, 2);
+
+                    showError(message);
+                    return;
+                }
+
+                if (response.already_merged === true) {
+
+                    const mergeDate =
+                        formatDateTime(response.last_merge);
+
+                    document.getElementById("status").innerHTML =
+                        "A Writer document has already been generated for this record on " +
+                        "<strong>" + mergeDate + "</strong>.<br><br>" +
+                        "Generating it again will create another merge.";
+
+                    document.getElementById("actions").style.display =
+                        "block";
+
+                } else {
+                    generateDocument();
+                }
+
+            }).catch(function(error) {
+
+                console.error("Check error:", error);
+
+                const message =
+                    error.message ||
+                    JSON.stringify(error, null, 2);
+
+                showError(message);
+            });
+        }
+
+        document.getElementById("regenerateButton")
+            .addEventListener("click", function() {
+                generateDocument();
+            });
+
+        document.getElementById("cancelButton")
+            .addEventListener("click", function() {
+                document.getElementById("status").textContent =
+                    "Merge cancelled.";
+
+                document.getElementById("actions").style.display =
+                    "none";
+            });
+
+        ZOHO.embeddedApp.on("PageLoad", function(data) {
+
+            currentRecordId = data.EntityId;
+
+            if (!currentRecordId) {
+                showError(
+                    "Unable to identify the current Bigin record."
+                );
+                return;
+            }
+
+            checkExistingMerge();
         });
 
         ZOHO.embeddedApp.init();
