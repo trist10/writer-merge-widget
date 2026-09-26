@@ -223,6 +223,19 @@
       The Topping uses the merge configuration defined in Writer.
     </p>
 
+    <h3>The merge fails when the Writer template has an active filter</h3>
+    <p>
+      If the selected Zoho Writer template has an active merge filter, the current Bigin record must match
+      that filter's criteria. If the record is excluded by the filter, Writer may fail to generate the PDF
+      and the Topping may display a technical error.
+    </p>
+
+    <p>
+      If this occurs, open the merge template in Zoho Writer and review the active merge filter. Either remove
+      the filter, change its criteria, or make sure the Bigin record you are merging matches the filter before
+      trying the Writer Merge button again.
+    </p>
+
     <h3>The PDF cannot be found</h3>
     <p>
       Open Zoho WorkDrive and look inside <strong>My Folders → Writer Merge Documents</strong>.
