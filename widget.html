@@ -84,24 +84,30 @@
     </div>
 
     <script>
-        const functionApiName = "writermerge__writer_merge_function";
+        const functionApiName =
+            "writermerge__writer_merge_function";
 
         let currentRecordId = null;
         let existingDocumentUrl = null;
 
         function setStatus(message, className) {
-            const status = document.getElementById("status");
+            const status =
+                document.getElementById("status");
 
             status.innerHTML = message;
             status.className = className || "";
         }
 
         function hideActions() {
-            document.getElementById("actions").style.display = "none";
+            document.getElementById(
+                "actions"
+            ).style.display = "none";
         }
 
         function showActions() {
-            document.getElementById("actions").style.display = "block";
+            document.getElementById(
+                "actions"
+            ).style.display = "block";
         }
 
         function executeMergeFunction(action) {
@@ -118,36 +124,84 @@
             );
         }
 
+        function getErrorText(error) {
+            if (!error) {
+                return "";
+            }
+
+            if (typeof error === "string") {
+                return error;
+            }
+
+            try {
+                return JSON.stringify(error);
+            }
+            catch (e) {
+                return String(error);
+            }
+        }
+
+        function getFriendlyErrorMessage(error) {
+            const errorText =
+                getErrorText(error);
+
+            if (
+                errorText.includes(
+                    "UnAuthenticated Connection"
+                ) ||
+                errorText.includes(
+                    "Unauthenticated Connection"
+                )
+            ) {
+                return (
+                    "Writer Merge needs to be connected to your Zoho account. " +
+                    "Please authorise the Bigin, Zoho Writer and WorkDrive " +
+                    "connections, then try again."
+                );
+            }
+
+            return "Unable to generate the Writer document.";
+        }
+
         function formatMergeDate(value) {
             if (!value) {
                 return "";
             }
 
-            const date = new Date(value);
+            const date =
+                new Date(value);
 
             if (isNaN(date.getTime())) {
                 return value;
             }
 
-            return date.toLocaleString("en-AU", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false
-            });
+            return date.toLocaleString(
+                "en-AU",
+                {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false
+                }
+            );
         }
 
         function generateMerge() {
             hideActions();
 
-            setStatus("Generating Writer document...");
+            setStatus(
+                "Generating Writer document..."
+            );
 
             executeMergeFunction("generate")
                 .then(function(response) {
-                    console.log("Writer Merge response:", response);
+                    console.log(
+                        "Writer Merge response:",
+                        response
+                    );
 
                     if (
                         response.status === "success" &&
@@ -158,14 +212,15 @@
                             "success"
                         );
 
-                        const newWindow = window.open(
-                            response.url,
-                            "_blank"
-                        );
+                        const newWindow =
+                            window.open(
+                                response.url,
+                                "_blank"
+                            );
 
                         if (!newWindow) {
                             setStatus(
-                                'Writer document generated successfully. ' +
+                                "Writer document generated successfully. " +
                                 '<a href="' +
                                 response.url +
                                 '" target="_blank">Open document</a>',
@@ -188,7 +243,9 @@
                     );
 
                     setStatus(
-                        "Unable to generate the Writer document.",
+                        getFriendlyErrorMessage(
+                            error
+                        ),
                         "error"
                     );
                 });
@@ -206,7 +263,10 @@
                         response
                     );
 
-                    if (response.status !== "success") {
+                    if (
+                        response.status !==
+                        "success"
+                    ) {
                         setStatus(
                             response.message ||
                             "Unable to check the existing Writer merge.",
@@ -216,7 +276,9 @@
                         return;
                     }
 
-                    if (response.already_merged) {
+                    if (
+                        response.already_merged
+                    ) {
                         existingDocumentUrl =
                             response.existing_url;
 
@@ -246,19 +308,43 @@
                         error
                     );
 
-                    setStatus(
-                        "Unable to check the existing Writer merge.",
-                        "error"
-                    );
+                    const errorText =
+                        getErrorText(error);
+
+                    if (
+                        errorText.includes(
+                            "UnAuthenticated Connection"
+                        ) ||
+                        errorText.includes(
+                            "Unauthenticated Connection"
+                        )
+                    ) {
+                        setStatus(
+                            "Writer Merge needs to be connected to your Zoho account. " +
+                            "Please authorise the Bigin, Zoho Writer and WorkDrive " +
+                            "connections, then try again.",
+                            "error"
+                        );
+                    }
+                    else {
+                        setStatus(
+                            "Unable to check the existing Writer merge.",
+                            "error"
+                        );
+                    }
                 });
         }
 
         document
-            .getElementById("viewExistingButton")
+            .getElementById(
+                "viewExistingButton"
+            )
             .addEventListener(
                 "click",
                 function() {
-                    if (existingDocumentUrl) {
+                    if (
+                        existingDocumentUrl
+                    ) {
                         window.open(
                             existingDocumentUrl,
                             "_blank"
@@ -268,7 +354,9 @@
             );
 
         document
-            .getElementById("regenerateButton")
+            .getElementById(
+                "regenerateButton"
+            )
             .addEventListener(
                 "click",
                 function() {
