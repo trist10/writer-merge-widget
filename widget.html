@@ -23,6 +23,11 @@
             white-space: pre-wrap;
             color: #b00020;
         }
+
+        #manualLink {
+            display: none;
+            margin-top: 16px;
+        }
     </style>
 </head>
 
@@ -30,6 +35,10 @@
 
     <div id="status">Generating Writer document...</div>
     <div id="error"></div>
+
+    <a id="manualLink" href="#" target="_blank">
+        Open generated document
+    </a>
 
     <script>
         ZOHO.embeddedApp.on("PageLoad", function(data) {
@@ -55,11 +64,33 @@
 
                 console.log("Function response:", response);
 
-                document.getElementById("status").textContent =
-                    "Function completed.";
+                if (response.status === "success" && response.url) {
 
-                document.getElementById("error").textContent =
-                    JSON.stringify(response, null, 2);
+                    document.getElementById("status").textContent =
+                        "Document generated. Opening...";
+
+                    const newWindow = window.open(response.url, "_blank");
+
+                    if (!newWindow) {
+                        document.getElementById("status").textContent =
+                            "Document generated.";
+
+                        const manualLink =
+                            document.getElementById("manualLink");
+
+                        manualLink.href = response.url;
+                        manualLink.style.display = "inline-block";
+                    }
+
+                } else {
+
+                    document.getElementById("status").textContent =
+                        "Unable to generate document.";
+
+                    document.getElementById("error").textContent =
+                        response.message ||
+                        JSON.stringify(response, null, 2);
+                }
 
             }, function(error) {
 
@@ -69,6 +100,7 @@
                     "Unable to generate document.";
 
                 document.getElementById("error").textContent =
+                    error.message ||
                     JSON.stringify(error, null, 2);
             });
         });
