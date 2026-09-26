@@ -20,6 +20,20 @@
             margin-top: 0;
         }
 
+        .setup-note {
+            background: #f6f8fa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        .setup-note strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
         .description {
             margin-bottom: 20px;
             line-height: 1.5;
@@ -76,10 +90,18 @@
 
     <h2>Writer Merge Settings</h2>
 
+    <div class="setup-note">
+        <strong>Before using Writer Merge</strong>
+        Authorise the Bigin, Zoho Writer and WorkDrive connections for this topping.
+        <br><br>
+        For first-time setup, paste the full URL of your Zoho Writer merge template
+        below. The full URL allows Writer Merge to identify your Zoho data centre
+        automatically.
+    </div>
+
     <div class="description">
-        Enter the Zoho Writer merge template you want Writer Merge to use.
-        For first-time setup, paste the full Writer document URL so Writer Merge
-        can identify your Zoho data centre automatically.
+        After the template has been configured, Writer Merge will remember both the
+        template and your Zoho data centre.
     </div>
 
     <label for="templateInput">Writer merge template</label>
@@ -166,9 +188,6 @@
                 return null;
             }
 
-            //
-            // DOCUMENT ID ONLY
-            //
             if (!value.includes("://")) {
                 return {
                     documentId: value,
@@ -176,9 +195,6 @@
                 };
             }
 
-            //
-            // FULL WRITER URL
-            //
             try {
                 const url = new URL(value);
 
