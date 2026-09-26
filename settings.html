@@ -52,6 +52,11 @@
             color: white;
         }
 
+        button:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+
         #status {
             margin-top: 16px;
             line-height: 1.5;
@@ -89,57 +94,53 @@
     <div id="status"></div>
 
     <script>
-        const variableName = "Writer Template ID";
-        const variableApiName = "writermerge__Writer_Template_ID";
+        const functionApiName =
+            "writermerge__writer_settings_function";
 
         function setStatus(message, type) {
-            const status = document.getElementById("status");
+            const status =
+                document.getElementById("status");
+
             status.textContent = message;
             status.className = type || "";
         }
 
-        function getVariableValue(response) {
-            if (!response) {
-                return null;
-            }
+        function executeSettingsFunction(payload) {
 
-            // Structure documented for getBiginVariable()
-            if (response.Content) {
-                return response.Content;
-            }
+            const requestData = {
+                arguments: JSON.stringify(payload)
+            };
 
-            // Structure seen in some Bigin responses
-            if (
-                response.Success &&
-                response.Success.Content
-            ) {
-                return response.Success.Content;
-            }
-
-            return null;
+            return ZOHO.BIGIN.FUNCTIONS.execute(
+                functionApiName,
+                requestData
+            );
         }
 
         function extractDocumentId(input) {
+
             const value = input.trim();
 
             if (!value) {
                 return null;
             }
 
-            // Plain Writer document ID
+            // Already just a document ID
             if (!value.includes("://")) {
                 return value;
             }
 
             // Full Writer URL
             try {
+
                 const url = new URL(value);
 
                 const parts = url.pathname
                     .split("/")
                     .filter(Boolean);
 
-                const openIndex = parts.indexOf("open");
+                const openIndex =
+                    parts.indexOf("open");
 
                 if (
                     openIndex !== -1 &&
@@ -148,6 +149,7 @@
                     return parts[openIndex + 1];
                 }
 
+                // Fallback to final path component
                 if (parts.length > 0) {
                     return parts[parts.length - 1];
                 }
@@ -163,19 +165,24 @@
 
             setStatus("Loading current settings...");
 
-            ZOHO.BIGIN.API.getBiginVariable({
-                nameSpace: variableName
+            executeSettingsFunction({
+                action: "get"
             }).then(function(response) {
 
-                console.log("Variable response:", response);
+                console.log(
+                    "Settings response:",
+                    response
+                );
 
-                const currentValue =
-                    getVariableValue(response);
+                if (
+                    response.status === "success" &&
+                    response.template_id
+                ) {
 
-                if (currentValue) {
-
-                    document.getElementById("templateInput").value =
-                        currentValue;
+                    document
+                        .getElementById("templateInput")
+                        .value =
+                        response.template_id;
 
                     setStatus("");
 
@@ -189,7 +196,10 @@
 
             }).catch(function(error) {
 
-                console.error("Unable to load variable:", error);
+                console.error(
+                    "Unable to load settings:",
+                    error
+                );
 
                 setStatus(
                     "Unable to load the current Writer template.",
@@ -198,11 +208,17 @@
             });
         }
 
-        document.getElementById("saveButton")
+        document
+            .getElementById("saveButton")
             .addEventListener("click", function() {
 
+                const button =
+                    document.getElementById("saveButton");
+
                 const rawValue =
-                    document.getElementById("templateInput").value;
+                    document
+                        .getElementById("templateInput")
+                        .value;
 
                 const documentId =
                     extractDocumentId(rawValue);
@@ -217,26 +233,52 @@
                     return;
                 }
 
+                button.disabled = true;
+
                 setStatus("Saving settings...");
 
-                ZOHO.BIGIN.API.setBiginVariable({
-                    apiname: variableApiName,
-                    value: documentId
+                executeSettingsFunction({
+                    action: "set",
+                    template_id: documentId
                 }).then(function(response) {
 
-                    console.log("Save response:", response);
-
-                    document.getElementById("templateInput").value =
-                        documentId;
-
-                    setStatus(
-                        "Writer template saved successfully.",
-                        "success"
+                    console.log(
+                        "Save response:",
+                        response
                     );
+
+                    button.disabled = false;
+
+                    if (response.status === "success") {
+
+                        document
+                            .getElementById("templateInput")
+                            .value =
+                            response.template_id ||
+                            documentId;
+
+                        setStatus(
+                            "Writer template saved successfully.",
+                            "success"
+                        );
+
+                    } else {
+
+                        setStatus(
+                            response.message ||
+                            "Unable to save the Writer template.",
+                            "error"
+                        );
+                    }
 
                 }).catch(function(error) {
 
-                    console.error("Unable to save variable:", error);
+                    button.disabled = false;
+
+                    console.error(
+                        "Unable to save settings:",
+                        error
+                    );
 
                     setStatus(
                         "Unable to save the Writer template.",
@@ -245,9 +287,12 @@
                 });
             });
 
-        ZOHO.embeddedApp.on("PageLoad", function(data) {
-            loadSettings();
-        });
+        ZOHO.embeddedApp.on(
+            "PageLoad",
+            function(data) {
+                loadSettings();
+            }
+        );
 
         ZOHO.embeddedApp.init();
     </script>
