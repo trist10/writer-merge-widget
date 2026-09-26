@@ -98,6 +98,27 @@
             status.className = type || "";
         }
 
+        function getVariableValue(response) {
+            if (!response) {
+                return null;
+            }
+
+            // Structure documented for getBiginVariable()
+            if (response.Content) {
+                return response.Content;
+            }
+
+            // Structure seen in some Bigin responses
+            if (
+                response.Success &&
+                response.Success.Content
+            ) {
+                return response.Success.Content;
+            }
+
+            return null;
+        }
+
         function extractDocumentId(input) {
             const value = input.trim();
 
@@ -127,7 +148,6 @@
                     return parts[openIndex + 1];
                 }
 
-                // Fallback to the final URL path component
                 if (parts.length > 0) {
                     return parts[parts.length - 1];
                 }
@@ -149,12 +169,16 @@
 
                 console.log("Variable response:", response);
 
-                if (response && response.Content) {
+                const currentValue =
+                    getVariableValue(response);
+
+                if (currentValue) {
 
                     document.getElementById("templateInput").value =
-                        response.Content;
+                        currentValue;
 
                     setStatus("");
+
                 } else {
 
                     setStatus(
