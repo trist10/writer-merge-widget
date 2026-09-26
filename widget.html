@@ -2,34 +2,77 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <script type="text/javascript"
-        src="https://js.zohocdn.com/biginsdk/dist/js/bigin-widget-sdk.js"></script>
+
+    <script
+        type="text/javascript"
+        src="https://js.zohocdn.com/biginsdk/dist/js/bigin-widget-sdk.js">
+    </script>
 
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
+            padding: 24px;
         }
 
-        pre {
+        #status {
+            font-size: 16px;
+        }
+
+        #error {
+            margin-top: 12px;
             white-space: pre-wrap;
-            word-break: break-word;
+            color: #b00020;
         }
     </style>
 </head>
 
 <body>
-    <h3 id="status">Waiting for Bigin...</h3>
-    <pre id="debug"></pre>
+
+    <div id="status">Generating Writer document...</div>
+    <div id="error"></div>
 
     <script>
         ZOHO.embeddedApp.on("PageLoad", function(data) {
-            document.getElementById("status").textContent = "Bigin data received";
-            document.getElementById("debug").textContent =
-                JSON.stringify(data, null, 2);
+
+            const recordId = data.EntityId;
+
+            if (!recordId) {
+                document.getElementById("status").textContent =
+                    "Unable to identify the current Bigin record.";
+                return;
+            }
+
+            const requestData = {
+                record_id: recordId
+            };
+
+            ZOHO.BIGIN.FUNCTIONS.execute(
+                "writermerge__writer_merge_function",
+                requestData
+            ).then(function(response) {
+
+                console.log("Function response:", response);
+
+                document.getElementById("status").textContent =
+                    "Function completed.";
+
+                document.getElementById("error").textContent =
+                    JSON.stringify(response, null, 2);
+
+            }, function(error) {
+
+                console.error("Function error:", error);
+
+                document.getElementById("status").textContent =
+                    "Unable to generate document.";
+
+                document.getElementById("error").textContent =
+                    JSON.stringify(error, null, 2);
+            });
         });
 
         ZOHO.embeddedApp.init();
     </script>
+
 </body>
 </html>
