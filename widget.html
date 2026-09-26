@@ -11,19 +11,16 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
             padding: 24px;
             color: #222;
+            background: #fff;
         }
 
         #status {
             font-size: 16px;
             line-height: 1.5;
-        }
-
-        #error {
-            margin-top: 12px;
-            white-space: pre-wrap;
-            color: #b00020;
+            margin: 0;
         }
 
         #actions {
@@ -32,242 +29,278 @@
         }
 
         button {
-            padding: 9px 18px;
+            padding: 10px 18px;
             margin-right: 10px;
-            margin-bottom: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
+            border-radius: 5px;
+            border: 1px solid #c8c8c8;
+            background: #fff;
+            color: #333;
+            font-size: 15px;
             cursor: pointer;
-            font-size: 14px;
         }
 
-        #viewButton {
+        button:hover {
+            background: #f5f5f5;
+        }
+
+        #viewExistingButton {
             background: #2f6fed;
-            color: white;
             border-color: #2f6fed;
+            color: #fff;
         }
 
-        #regenerateButton {
-            background: white;
-            color: #333;
+        #viewExistingButton:hover {
+            background: #245fd4;
         }
 
-        #cancelButton {
-            background: white;
-            color: #333;
+        button:disabled {
+            opacity: 0.6;
+            cursor: default;
         }
 
-        #manualLink {
-            display: none;
-            margin-top: 18px;
+        .error {
+            color: #b00020;
+        }
+
+        .success {
+            color: #16803c;
+        }
+
+        a {
+            color: #2f6fed;
         }
     </style>
 </head>
 
 <body>
 
-    <div id="status">Checking for an existing Writer merge...</div>
-
-    <div id="actions">
-        <button id="viewButton">View Existing</button>
-        <button id="regenerateButton">Regenerate</button>
-        <button id="cancelButton">Cancel</button>
+    <div id="status">
+        Checking for an existing Writer merge...
     </div>
 
-    <div id="error"></div>
-
-    <a id="manualLink" href="#" target="_blank">
-        Open generated document
-    </a>
+    <div id="actions">
+        <button id="viewExistingButton">View Existing</button>
+        <button id="regenerateButton">Regenerate</button>
+    </div>
 
     <script>
+        const functionApiName = "writermerge__writer_merge_function";
+
         let currentRecordId = null;
         let existingDocumentUrl = null;
 
-        function executeWriterFunction(payload) {
+        function setStatus(message, className) {
+            const status = document.getElementById("status");
+
+            status.innerHTML = message;
+            status.className = className || "";
+        }
+
+        function hideActions() {
+            document.getElementById("actions").style.display = "none";
+        }
+
+        function showActions() {
+            document.getElementById("actions").style.display = "block";
+        }
+
+        function executeMergeFunction(action) {
             const requestData = {
-                arguments: JSON.stringify(payload)
+                arguments: JSON.stringify({
+                    record_id: currentRecordId,
+                    action: action
+                })
             };
 
             return ZOHO.BIGIN.FUNCTIONS.execute(
-                "writermerge__writer_merge_function",
+                functionApiName,
                 requestData
             );
         }
 
-        function formatDateTime(value) {
+        function formatMergeDate(value) {
             if (!value) {
-                return "an earlier time";
+                return "";
             }
 
-            const parsedDate = new Date(value);
+            const date = new Date(value);
 
-            if (isNaN(parsedDate.getTime())) {
+            if (isNaN(date.getTime())) {
                 return value;
             }
 
-            return parsedDate.toLocaleString();
-        }
-
-        function showError(message) {
-            document.getElementById("status").textContent =
-                "Unable to generate document.";
-
-            document.getElementById("error").textContent =
-                message || "An unexpected error occurred.";
-
-            document.getElementById("actions").style.display = "none";
-        }
-
-        function openDocument(url) {
-            if (!url) {
-                showError("No stored document URL is available.");
-                return;
-            }
-
-            const newWindow = window.open(url, "_blank");
-
-            if (!newWindow) {
-                document.getElementById("status").textContent =
-                    "Document ready.";
-
-                const manualLink =
-                    document.getElementById("manualLink");
-
-                manualLink.href = url;
-                manualLink.style.display = "inline-block";
-            }
-        }
-
-        function generateDocument() {
-            document.getElementById("status").textContent =
-                "Generating Writer document...";
-
-            document.getElementById("actions").style.display = "none";
-            document.getElementById("error").textContent = "";
-            document.getElementById("manualLink").style.display = "none";
-
-            executeWriterFunction({
-                record_id: currentRecordId,
-                action: "generate"
-            }).then(function(response) {
-
-                console.log("Generate response:", response);
-
-                if (response.status === "success" && response.url) {
-
-                    existingDocumentUrl = response.url;
-
-                    document.getElementById("status").textContent =
-                        "Document generated. Opening...";
-
-                    openDocument(response.url);
-
-                } else {
-
-                    const message =
-                        response.message ||
-                        JSON.stringify(response, null, 2);
-
-                    showError(message);
-                }
-
-            }).catch(function(error) {
-
-                console.error("Generate error:", error);
-
-                const message =
-                    error.message ||
-                    JSON.stringify(error, null, 2);
-
-                showError(message);
+            return date.toLocaleString("en-AU", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false
             });
+        }
+
+        function generateMerge() {
+            hideActions();
+
+            setStatus("Generating Writer document...");
+
+            executeMergeFunction("generate")
+                .then(function(response) {
+                    console.log("Writer Merge response:", response);
+
+                    if (
+                        response.status === "success" &&
+                        response.url
+                    ) {
+                        setStatus(
+                            "Writer document generated successfully.",
+                            "success"
+                        );
+
+                        const newWindow = window.open(
+                            response.url,
+                            "_blank"
+                        );
+
+                        if (!newWindow) {
+                            setStatus(
+                                'Writer document generated successfully. ' +
+                                '<a href="' +
+                                response.url +
+                                '" target="_blank">Open document</a>',
+                                "success"
+                            );
+                        }
+                    }
+                    else {
+                        setStatus(
+                            response.message ||
+                            "Unable to generate the Writer document.",
+                            "error"
+                        );
+                    }
+                })
+                .catch(function(error) {
+                    console.error(
+                        "Writer Merge generation error:",
+                        error
+                    );
+
+                    setStatus(
+                        "Unable to generate the Writer document.",
+                        "error"
+                    );
+                });
         }
 
         function checkExistingMerge() {
-            executeWriterFunction({
-                record_id: currentRecordId,
-                action: "check"
-            }).then(function(response) {
+            setStatus(
+                "Checking for an existing Writer merge..."
+            );
 
-                console.log("Check response:", response);
+            executeMergeFunction("check")
+                .then(function(response) {
+                    console.log(
+                        "Writer Merge check response:",
+                        response
+                    );
 
-                if (response.status !== "success") {
+                    if (response.status !== "success") {
+                        setStatus(
+                            response.message ||
+                            "Unable to check the existing Writer merge.",
+                            "error"
+                        );
 
-                    const message =
-                        response.message ||
-                        JSON.stringify(response, null, 2);
+                        return;
+                    }
 
-                    showError(message);
-                    return;
-                }
+                    if (response.already_merged) {
+                        existingDocumentUrl =
+                            response.existing_url;
 
-                if (response.already_merged === true) {
+                        const formattedDate =
+                            formatMergeDate(
+                                response.last_merge
+                            );
 
-                    existingDocumentUrl = response.existing_url;
+                        setStatus(
+                            "A Writer document has already been " +
+                            "generated for this record on <strong>" +
+                            formattedDate +
+                            "</strong>.<br><br>" +
+                            "You can open the existing document or " +
+                            "generate it again."
+                        );
 
-                    const mergeDate =
-                        formatDateTime(response.last_merge);
+                        showActions();
+                    }
+                    else {
+                        generateMerge();
+                    }
+                })
+                .catch(function(error) {
+                    console.error(
+                        "Writer Merge check error:",
+                        error
+                    );
 
-                    document.getElementById("status").innerHTML =
-                        "A Writer document has already been generated for this record on " +
-                        "<strong>" + mergeDate + "</strong>.<br><br>" +
-                        "You can open the existing document or generate it again.";
-
-                    document.getElementById("viewButton").style.display =
-                        existingDocumentUrl ? "inline-block" : "none";
-
-                    document.getElementById("actions").style.display =
-                        "block";
-
-                } else {
-                    generateDocument();
-                }
-
-            }).catch(function(error) {
-
-                console.error("Check error:", error);
-
-                const message =
-                    error.message ||
-                    JSON.stringify(error, null, 2);
-
-                showError(message);
-            });
+                    setStatus(
+                        "Unable to check the existing Writer merge.",
+                        "error"
+                    );
+                });
         }
 
-        document.getElementById("viewButton")
-            .addEventListener("click", function() {
-                openDocument(existingDocumentUrl);
-            });
+        document
+            .getElementById("viewExistingButton")
+            .addEventListener(
+                "click",
+                function() {
+                    if (existingDocumentUrl) {
+                        window.open(
+                            existingDocumentUrl,
+                            "_blank"
+                        );
+                    }
+                }
+            );
 
-        document.getElementById("regenerateButton")
-            .addEventListener("click", function() {
-                generateDocument();
-            });
+        document
+            .getElementById("regenerateButton")
+            .addEventListener(
+                "click",
+                function() {
+                    generateMerge();
+                }
+            );
 
-        document.getElementById("cancelButton")
-            .addEventListener("click", function() {
-                document.getElementById("status").textContent =
-                    "Merge cancelled.";
-
-                document.getElementById("actions").style.display =
-                    "none";
-            });
-
-        ZOHO.embeddedApp.on("PageLoad", function(data) {
-
-            currentRecordId = data.EntityId;
-
-            if (!currentRecordId) {
-                showError(
-                    "Unable to identify the current Bigin record."
+        ZOHO.embeddedApp.on(
+            "PageLoad",
+            function(data) {
+                console.log(
+                    "Writer Merge PageLoad:",
+                    data
                 );
-                return;
-            }
 
-            checkExistingMerge();
-        });
+                if (
+                    data &&
+                    data.EntityId
+                ) {
+                    currentRecordId =
+                        data.EntityId;
+
+                    checkExistingMerge();
+                }
+                else {
+                    setStatus(
+                        "Unable to determine the current Pipeline record.",
+                        "error"
+                    );
+                }
+            }
+        );
 
         ZOHO.embeddedApp.init();
     </script>
