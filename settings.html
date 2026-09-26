@@ -89,6 +89,7 @@
     <div id="status"></div>
 
     <script>
+        const variableName = "Writer Template ID";
         const variableApiName = "writermerge__Writer_Template_ID";
 
         function setStatus(message, type) {
@@ -104,7 +105,7 @@
                 return null;
             }
 
-            // Plain document ID
+            // Plain Writer document ID
             if (!value.includes("://")) {
                 return value;
             }
@@ -112,6 +113,7 @@
             // Full Writer URL
             try {
                 const url = new URL(value);
+
                 const parts = url.pathname
                     .split("/")
                     .filter(Boolean);
@@ -125,7 +127,7 @@
                     return parts[openIndex + 1];
                 }
 
-                // Fallback to final path component
+                // Fallback to the final URL path component
                 if (parts.length > 0) {
                     return parts[parts.length - 1];
                 }
@@ -138,19 +140,37 @@
         }
 
         function loadSettings() {
+
+            setStatus("Loading current settings...");
+
             ZOHO.BIGIN.API.getBiginVariable({
-                nameSpace: variableApiName
+                nameSpace: variableName
             }).then(function(response) {
 
                 console.log("Variable response:", response);
 
                 if (response && response.Content) {
+
                     document.getElementById("templateInput").value =
                         response.Content;
+
+                    setStatus("");
+                } else {
+
+                    setStatus(
+                        "No Writer template is currently configured.",
+                        "error"
+                    );
                 }
 
             }).catch(function(error) {
+
                 console.error("Unable to load variable:", error);
+
+                setStatus(
+                    "Unable to load the current Writer template.",
+                    "error"
+                );
             });
         }
 
@@ -164,10 +184,12 @@
                     extractDocumentId(rawValue);
 
                 if (!documentId) {
+
                     setStatus(
                         "Please enter a valid Writer document ID or URL.",
                         "error"
                     );
+
                     return;
                 }
 
