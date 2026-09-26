@@ -78,7 +78,8 @@
 
     <div class="description">
         Enter the Zoho Writer merge template you want Writer Merge to use.
-        You can paste either the Writer document ID or the full Writer document URL.
+        For first-time setup, paste the full Writer document URL so Writer Merge
+        can identify your Zoho data centre automatically.
     </div>
 
     <label for="templateInput">Writer merge template</label>
@@ -86,8 +87,7 @@
     <input
         id="templateInput"
         type="text"
-        placeholder="Paste Writer document ID or URL"
-    >
+        placeholder="Paste your Zoho Writer document URL">
 
     <button id="saveButton">Save Settings</button>
 
@@ -96,6 +96,8 @@
     <script>
         const functionApiName =
             "writermerge__writer_settings_function";
+
+        let currentApiDomain = null;
 
         function setStatus(message, type) {
             const status =
@@ -106,7 +108,6 @@
         }
 
         function executeSettingsFunction(payload) {
-
             const requestData = {
                 arguments: JSON.stringify(payload)
             };
@@ -117,27 +118,85 @@
             );
         }
 
-        function extractDocumentId(input) {
+        function getApiDomainFromWriterHost(hostname) {
+            const host = hostname.toLowerCase();
 
+            if (host === "writer.zoho.com.au") {
+                return "https://www.zohoapis.com.au";
+            }
+
+            if (host === "writer.zoho.com.cn") {
+                return "https://www.zohoapis.com.cn";
+            }
+
+            if (host === "writer.zoho.eu") {
+                return "https://www.zohoapis.eu";
+            }
+
+            if (host === "writer.zoho.in") {
+                return "https://www.zohoapis.in";
+            }
+
+            if (host === "writer.zoho.jp") {
+                return "https://www.zohoapis.jp";
+            }
+
+            if (host === "writer.zoho.sa") {
+                return "https://www.zohoapis.sa";
+            }
+
+            if (
+                host === "writer.zoho.ca" ||
+                host === "writer.zohocloud.ca"
+            ) {
+                return "https://www.zohoapis.ca";
+            }
+
+            if (host === "writer.zoho.com") {
+                return "https://www.zohoapis.com";
+            }
+
+            return null;
+        }
+
+        function extractTemplateSettings(input) {
             const value = input.trim();
 
             if (!value) {
                 return null;
             }
 
-            // Already just a document ID
+            //
+            // DOCUMENT ID ONLY
+            //
             if (!value.includes("://")) {
-                return value;
+                return {
+                    documentId: value,
+                    apiDomain: currentApiDomain
+                };
             }
 
-            // Full Writer URL
+            //
+            // FULL WRITER URL
+            //
             try {
-
                 const url = new URL(value);
 
-                const parts = url.pathname
-                    .split("/")
-                    .filter(Boolean);
+                const apiDomain =
+                    getApiDomainFromWriterHost(
+                        url.hostname
+                    );
+
+                if (!apiDomain) {
+                    return null;
+                }
+
+                const parts =
+                    url.pathname
+                        .split("/")
+                        .filter(Boolean);
+
+                let documentId = null;
 
                 const openIndex =
                     parts.indexOf("open");
@@ -146,56 +205,74 @@
                     openIndex !== -1 &&
                     parts.length > openIndex + 1
                 ) {
-                    return parts[openIndex + 1];
+                    documentId =
+                        parts[openIndex + 1];
+                }
+                else if (parts.length > 0) {
+                    documentId =
+                        parts[parts.length - 1];
                 }
 
-                // Fallback to final path component
-                if (parts.length > 0) {
-                    return parts[parts.length - 1];
+                if (!documentId) {
+                    return null;
                 }
 
-            } catch (e) {
+                return {
+                    documentId: documentId,
+                    apiDomain: apiDomain
+                };
+            }
+            catch (e) {
                 return null;
             }
-
-            return null;
         }
 
         function loadSettings() {
-
-            setStatus("Loading current settings...");
+            setStatus(
+                "Loading current settings..."
+            );
 
             executeSettingsFunction({
                 action: "get"
-            }).then(function(response) {
-
+            })
+            .then(function(response) {
                 console.log(
                     "Settings response:",
                     response
                 );
 
                 if (
-                    response.status === "success" &&
-                    response.template_id
+                    response.status === "success"
                 ) {
+                    currentApiDomain =
+                        response.api_domain || null;
 
-                    document
-                        .getElementById("templateInput")
-                        .value =
-                        response.template_id;
+                    if (response.template_id) {
+                        document
+                            .getElementById(
+                                "templateInput"
+                            )
+                            .value =
+                                response.template_id;
 
-                    setStatus("");
-
-                } else {
-
+                        setStatus("");
+                    }
+                    else {
+                        setStatus(
+                            "No Writer template is currently configured.",
+                            "error"
+                        );
+                    }
+                }
+                else {
                     setStatus(
-                        "No Writer template is currently configured.",
+                        response.message ||
+                        "Unable to load the current Writer template.",
                         "error"
                     );
                 }
-
-            }).catch(function(error) {
-
+            })
+            .catch(function(error) {
                 console.error(
                     "Unable to load settings:",
                     error
@@ -210,82 +287,110 @@
 
         document
             .getElementById("saveButton")
-            .addEventListener("click", function() {
-
-                const button =
-                    document.getElementById("saveButton");
-
-                const rawValue =
-                    document
-                        .getElementById("templateInput")
-                        .value;
-
-                const documentId =
-                    extractDocumentId(rawValue);
-
-                if (!documentId) {
-
-                    setStatus(
-                        "Please enter a valid Writer document ID or URL.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-                button.disabled = true;
-
-                setStatus("Saving settings...");
-
-                executeSettingsFunction({
-                    action: "set",
-                    template_id: documentId
-                }).then(function(response) {
-
-                    console.log(
-                        "Save response:",
-                        response
-                    );
-
-                    button.disabled = false;
-
-                    if (response.status === "success") {
-
-                        document
-                            .getElementById("templateInput")
-                            .value =
-                            response.template_id ||
-                            documentId;
-
-                        setStatus(
-                            "Writer template saved successfully.",
-                            "success"
+            .addEventListener(
+                "click",
+                function() {
+                    const button =
+                        document.getElementById(
+                            "saveButton"
                         );
 
-                    } else {
+                    const rawValue =
+                        document.getElementById(
+                            "templateInput"
+                        ).value;
+
+                    const settings =
+                        extractTemplateSettings(
+                            rawValue
+                        );
+
+                    if (
+                        !settings ||
+                        !settings.documentId
+                    ) {
+                        setStatus(
+                            "Please enter a valid Zoho Writer document URL or document ID.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+                    if (!settings.apiDomain) {
+                        setStatus(
+                            "For first-time setup, please paste the full Zoho Writer document URL so Writer Merge can identify your data centre.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+                    button.disabled = true;
+
+                    setStatus(
+                        "Saving settings..."
+                    );
+
+                    executeSettingsFunction({
+                        action: "set",
+                        template_id:
+                            settings.documentId,
+                        api_domain:
+                            settings.apiDomain
+                    })
+                    .then(function(response) {
+                        console.log(
+                            "Save response:",
+                            response
+                        );
+
+                        button.disabled = false;
+
+                        if (
+                            response.status ===
+                            "success"
+                        ) {
+                            currentApiDomain =
+                                response.api_domain ||
+                                settings.apiDomain;
+
+                            document
+                                .getElementById(
+                                    "templateInput"
+                                )
+                                .value =
+                                    response.template_id ||
+                                    settings.documentId;
+
+                            setStatus(
+                                "Writer template saved successfully.",
+                                "success"
+                            );
+                        }
+                        else {
+                            setStatus(
+                                response.message ||
+                                "Unable to save the Writer template.",
+                                "error"
+                            );
+                        }
+                    })
+                    .catch(function(error) {
+                        button.disabled = false;
+
+                        console.error(
+                            "Unable to save settings:",
+                            error
+                        );
 
                         setStatus(
-                            response.message ||
                             "Unable to save the Writer template.",
                             "error"
                         );
-                    }
-
-                }).catch(function(error) {
-
-                    button.disabled = false;
-
-                    console.error(
-                        "Unable to save settings:",
-                        error
-                    );
-
-                    setStatus(
-                        "Unable to save the Writer template.",
-                        "error"
-                    );
-                });
-            });
+                    });
+                }
+            );
 
         ZOHO.embeddedApp.on(
             "PageLoad",
