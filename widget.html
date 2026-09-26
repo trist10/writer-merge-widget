@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript"
+        src="https://js.zohocdn.com/biginsdk/dist/js/bigin-widget-sdk.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
+</head>
+
+<body>
+    <h3 id="status">Waiting for Bigin...</h3>
+    <pre id="debug"></pre>
+
+    <script>
+        ZOHO.embeddedApp.on("PageLoad", function(data) {
+            document.getElementById("status").textContent = "Bigin data received";
+            document.getElementById("debug").textContent =
+                JSON.stringify(data, null, 2);
+        });
+
+        ZOHO.embeddedApp.init();
+    </script>
+</body>
+</html>
