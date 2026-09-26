@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index,follow">
+  <title>User Guide – Writer Merge Document Tool</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f7f8;
+      --card: #ffffff;
+      --text: #1f2328;
+      --muted: #5d6670;
+      --border: #d8dee4;
+      --accent: #2563eb;
+      --soft: #f3f6fa;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(920px, calc(100% - 32px));
+      margin: 40px auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 42px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.05);
+    }
+
+    h1, h2, h3 {
+      line-height: 1.25;
+      color: var(--text);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+    }
+
+    h2 {
+      margin-top: 2.2rem;
+      font-size: 1.35rem;
+    }
+
+    h3 {
+      margin-top: 1.4rem;
+      font-size: 1.05rem;
+    }
+
+    p, li {
+      font-size: 1rem;
+    }
+
+    .meta {
+      color: var(--muted);
+      margin-bottom: 1.75rem;
+    }
+
+    .note {
+      background: var(--soft);
+      border-left: 4px solid var(--accent);
+      padding: 14px 16px;
+      border-radius: 8px;
+      margin: 18px 0;
+    }
+
+    ol, ul {
+      padding-left: 1.4rem;
+    }
+
+    code {
+      background: #f1f3f5;
+      border-radius: 4px;
+      padding: 2px 5px;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    @media (max-width: 640px) {
+      main {
+        margin: 16px auto;
+        padding: 24px 20px;
+        border-radius: 10px;
+      }
+
+      h1 { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>User Guide</h1>
+    <p class="meta">
+      <strong>Writer Merge Document Tool</strong><br>
+      Generate PDF documents from Bigin records using Zoho Writer templates and save them automatically to Zoho WorkDrive.
+    </p>
+
+    <h2>1. Overview</h2>
+    <p>
+      Writer Merge Document Tool adds a simple document-generation workflow to Zoho Bigin.
+      Once a Zoho Writer merge template has been configured, you can generate a PDF directly
+      from a Bigin Pipeline record with a single click.
+    </p>
+
+    <p>The generated PDF is automatically saved to Zoho WorkDrive, and the Bigin record is updated with the latest merge information.</p>
+
+    <h2>2. Requirements</h2>
+    <p>Before using the Topping, make sure you have access to:</p>
+    <ul>
+      <li>Zoho Bigin;</li>
+      <li>Zoho Writer;</li>
+      <li>Zoho WorkDrive; and</li>
+      <li>a Zoho Writer document configured as a merge template using Bigin as its data source.</li>
+    </ul>
+
+    <div class="note">
+      <strong>Important:</strong> The Writer template must already be configured with the Bigin fields you want to merge into the generated document.
+    </div>
+
+    <h2>3. Configure the Writer template</h2>
+    <ol>
+      <li>Open the Zoho Writer document you want to use as your merge template.</li>
+      <li>Confirm that the document is configured for merge using the required Bigin fields.</li>
+      <li>Copy the full URL from your browser's address bar while the Writer document is open.</li>
+      <li>In Bigin, open <strong>Writer Merge Settings</strong>.</li>
+      <li>Paste the full Writer document URL into the template URL field.</li>
+      <li>Save the settings.</li>
+    </ol>
+
+    <p>
+      The Topping automatically identifies the Writer document and the appropriate Zoho data centre
+      from the URL you provide.
+    </p>
+
+    <h2>4. Generate a document</h2>
+    <ol>
+      <li>Open the Bigin Pipeline record you want to use.</li>
+      <li>Click the <strong>Writer Merge</strong> button.</li>
+      <li>The Topping checks whether the record has previously been merged.</li>
+      <li>If a previous merge exists, you can choose whether to open the existing document or generate a new version.</li>
+      <li>The selected Writer template is merged with the Bigin record.</li>
+      <li>A PDF is generated and uploaded automatically to Zoho WorkDrive.</li>
+    </ol>
+
+    <h2>5. Where generated PDFs are stored</h2>
+    <p>
+      Generated PDFs are stored in a folder named:
+    </p>
+
+    <p><code>Writer Merge Documents</code></p>
+
+    <p>
+      This folder is created automatically inside your Zoho WorkDrive <strong>My Folders</strong> area
+      if it does not already exist.
+    </p>
+
+    <h2>6. File naming and regenerated documents</h2>
+    <p>
+      Each PDF is assigned a stable filename based on the Bigin record ID.
+    </p>
+
+    <p>
+      If you generate the document again for the same record, the Topping uploads the new PDF using
+      the same filename. WorkDrive retains the updated file as the latest version rather than creating
+      a separate duplicate file.
+    </p>
+
+    <h2>7. Merge tracking in Bigin</h2>
+    <p>
+      After a successful merge, the Topping stores information on the Bigin record, including:
+    </p>
+    <ul>
+      <li>the date and time of the latest Writer merge; and</li>
+      <li>the WorkDrive URL of the generated document.</li>
+    </ul>
+
+    <p>
+      This allows the Topping to detect whether the record has already been merged and gives you quick
+      access to the most recently generated document.
+    </p>
+
+    <h2>8. Changing the Writer template</h2>
+    <ol>
+      <li>Open the Writer document you want to use instead.</li>
+      <li>Copy its full browser URL.</li>
+      <li>Open <strong>Writer Merge Settings</strong> in Bigin.</li>
+      <li>Replace the existing template URL.</li>
+      <li>Save the settings.</li>
+    </ol>
+
+    <p>
+      Future merges will use the newly configured Writer template.
+    </p>
+
+    <h2>9. Troubleshooting</h2>
+
+    <h3>No Writer template is configured</h3>
+    <p>
+      Open Writer Merge Settings and save the full URL of the Writer merge template you want to use.
+    </p>
+
+    <h3>The wrong document is being generated</h3>
+    <p>
+      Check the URL currently saved in Writer Merge Settings and make sure it belongs to the correct Writer template.
+    </p>
+
+    <h3>Merge fields are blank or incorrect</h3>
+    <p>
+      Open the Writer template and confirm that the merge fields are mapped correctly to the Bigin data source.
+      The Topping uses the merge configuration defined in Writer.
+    </p>
+
+    <h3>The PDF cannot be found</h3>
+    <p>
+      Open Zoho WorkDrive and look inside <strong>My Folders → Writer Merge Documents</strong>.
+    </p>
+
+    <h3>The document does not update after regenerating it</h3>
+    <p>
+      WorkDrive may retain previous file versions. Open the file in WorkDrive and confirm that you are viewing
+      the latest version.
+    </p>
+
+    <h3>Permission or authentication errors</h3>
+    <p>
+      Confirm that the Zoho account installing the Topping has access to Bigin, Writer and WorkDrive and that the
+      required permissions were granted during installation.
+    </p>
+
+    <h2>10. Data handling</h2>
+    <p>
+      The document-generation workflow operates through Zoho Bigin, Zoho Writer and Zoho WorkDrive.
+      Generated PDFs are stored in the user's Zoho WorkDrive account.
+    </p>
+
+    <p>
+      For more information about data handling, refer to the Writer Merge Document Tool Privacy Policy
+      linked from the Zoho Marketplace listing.
+    </p>
+
+    <h2>11. Uninstalling the Topping</h2>
+    <p>
+      You can uninstall Writer Merge Document Tool from your Bigin organisation at any time.
+    </p>
+
+    <p>
+      Uninstalling the Topping does not automatically delete PDFs already stored in WorkDrive.
+      Any generated files you no longer require should be removed separately from WorkDrive.
+    </p>
+
+    <h2>12. Support</h2>
+    <p>
+      If you experience an issue, use the support contact information provided on the Zoho Marketplace listing.
+    </p>
+
+    <p>
+      When requesting support, include a brief description of the problem and any relevant error message.
+      Do not send passwords or unnecessary sensitive customer information.
+    </p>
+  </main>
+</body>
+</html>
