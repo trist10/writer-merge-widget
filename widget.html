@@ -34,16 +34,22 @@
         button {
             padding: 9px 18px;
             margin-right: 10px;
+            margin-bottom: 8px;
             border-radius: 4px;
             border: 1px solid #ccc;
             cursor: pointer;
             font-size: 14px;
         }
 
-        #regenerateButton {
-            background: #e74c3c;
+        #viewButton {
+            background: #2f6fed;
             color: white;
-            border-color: #e74c3c;
+            border-color: #2f6fed;
+        }
+
+        #regenerateButton {
+            background: white;
+            color: #333;
         }
 
         #cancelButton {
@@ -63,6 +69,7 @@
     <div id="status">Checking for an existing Writer merge...</div>
 
     <div id="actions">
+        <button id="viewButton">View Existing</button>
         <button id="regenerateButton">Regenerate</button>
         <button id="cancelButton">Cancel</button>
     </div>
@@ -75,6 +82,7 @@
 
     <script>
         let currentRecordId = null;
+        let existingDocumentUrl = null;
 
         function executeWriterFunction(payload) {
             const requestData = {
@@ -111,6 +119,26 @@
             document.getElementById("actions").style.display = "none";
         }
 
+        function openDocument(url) {
+            if (!url) {
+                showError("No stored document URL is available.");
+                return;
+            }
+
+            const newWindow = window.open(url, "_blank");
+
+            if (!newWindow) {
+                document.getElementById("status").textContent =
+                    "Document ready.";
+
+                const manualLink =
+                    document.getElementById("manualLink");
+
+                manualLink.href = url;
+                manualLink.style.display = "inline-block";
+            }
+        }
+
         function generateDocument() {
             document.getElementById("status").textContent =
                 "Generating Writer document...";
@@ -128,23 +156,15 @@
 
                 if (response.status === "success" && response.url) {
 
+                    existingDocumentUrl = response.url;
+
                     document.getElementById("status").textContent =
                         "Document generated. Opening...";
 
-                    const newWindow = window.open(response.url, "_blank");
-
-                    if (!newWindow) {
-                        document.getElementById("status").textContent =
-                            "Document generated.";
-
-                        const manualLink =
-                            document.getElementById("manualLink");
-
-                        manualLink.href = response.url;
-                        manualLink.style.display = "inline-block";
-                    }
+                    openDocument(response.url);
 
                 } else {
+
                     const message =
                         response.message ||
                         JSON.stringify(response, null, 2);
@@ -173,6 +193,7 @@
                 console.log("Check response:", response);
 
                 if (response.status !== "success") {
+
                     const message =
                         response.message ||
                         JSON.stringify(response, null, 2);
@@ -183,13 +204,18 @@
 
                 if (response.already_merged === true) {
 
+                    existingDocumentUrl = response.existing_url;
+
                     const mergeDate =
                         formatDateTime(response.last_merge);
 
                     document.getElementById("status").innerHTML =
                         "A Writer document has already been generated for this record on " +
                         "<strong>" + mergeDate + "</strong>.<br><br>" +
-                        "Generating it again will create another merge.";
+                        "You can open the existing document or generate it again.";
+
+                    document.getElementById("viewButton").style.display =
+                        existingDocumentUrl ? "inline-block" : "none";
 
                     document.getElementById("actions").style.display =
                         "block";
@@ -209,6 +235,11 @@
                 showError(message);
             });
         }
+
+        document.getElementById("viewButton")
+            .addEventListener("click", function() {
+                openDocument(existingDocumentUrl);
+            });
 
         document.getElementById("regenerateButton")
             .addEventListener("click", function() {
