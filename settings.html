@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <script
+        type="text/javascript"
+        src="https://js.zohocdn.com/biginsdk/dist/js/bigin-widget-sdk.js">
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 24px;
+            color: #222;
+            max-width: 700px;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .description {
+            margin-bottom: 20px;
+            line-height: 1.5;
+            color: #555;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+        }
+
+        button {
+            margin-top: 16px;
+            padding: 9px 18px;
+            border: 0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            background: #2f6fed;
+            color: white;
+        }
+
+        #status {
+            margin-top: 16px;
+            line-height: 1.5;
+        }
+
+        .success {
+            color: #16803c;
+        }
+
+        .error {
+            color: #b00020;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Writer Merge Settings</h2>
+
+    <div class="description">
+        Enter the Zoho Writer merge template you want Writer Merge to use.
+        You can paste either the Writer document ID or the full Writer document URL.
+    </div>
+
+    <label for="templateInput">Writer merge template</label>
+
+    <input
+        id="templateInput"
+        type="text"
+        placeholder="Paste Writer document ID or URL"
+    >
+
+    <button id="saveButton">Save Settings</button>
+
+    <div id="status"></div>
+
+    <script>
+        const variableApiName = "writermerge__Writer_Template_ID";
+
+        function setStatus(message, type) {
+            const status = document.getElementById("status");
+            status.textContent = message;
+            status.className = type || "";
+        }
+
+        function extractDocumentId(input) {
+            const value = input.trim();
+
+            if (!value) {
+                return null;
+            }
+
+            // Plain document ID
+            if (!value.includes("://")) {
+                return value;
+            }
+
+            // Full Writer URL
+            try {
+                const url = new URL(value);
+                const parts = url.pathname
+                    .split("/")
+                    .filter(Boolean);
+
+                const openIndex = parts.indexOf("open");
+
+                if (
+                    openIndex !== -1 &&
+                    parts.length > openIndex + 1
+                ) {
+                    return parts[openIndex + 1];
+                }
+
+                // Fallback to final path component
+                if (parts.length > 0) {
+                    return parts[parts.length - 1];
+                }
+
+            } catch (e) {
+                return null;
+            }
+
+            return null;
+        }
+
+        function loadSettings() {
+            ZOHO.BIGIN.API.getBiginVariable({
+                nameSpace: variableApiName
+            }).then(function(response) {
+
+                console.log("Variable response:", response);
+
+                if (response && response.Content) {
+                    document.getElementById("templateInput").value =
+                        response.Content;
+                }
+
+            }).catch(function(error) {
+                console.error("Unable to load variable:", error);
+            });
+        }
+
+        document.getElementById("saveButton")
+            .addEventListener("click", function() {
+
+                const rawValue =
+                    document.getElementById("templateInput").value;
+
+                const documentId =
+                    extractDocumentId(rawValue);
+
+                if (!documentId) {
+                    setStatus(
+                        "Please enter a valid Writer document ID or URL.",
+                        "error"
+                    );
+                    return;
+                }
+
+                setStatus("Saving settings...");
+
+                ZOHO.BIGIN.API.setBiginVariable({
+                    apiname: variableApiName,
+                    value: documentId
+                }).then(function(response) {
+
+                    console.log("Save response:", response);
+
+                    document.getElementById("templateInput").value =
+                        documentId;
+
+                    setStatus(
+                        "Writer template saved successfully.",
+                        "success"
+                    );
+
+                }).catch(function(error) {
+
+                    console.error("Unable to save variable:", error);
+
+                    setStatus(
+                        "Unable to save the Writer template.",
+                        "error"
+                    );
+                });
+            });
+
+        ZOHO.embeddedApp.on("PageLoad", function(data) {
+            loadSettings();
+        });
+
+        ZOHO.embeddedApp.init();
+    </script>
+
+</body>
+</html>
