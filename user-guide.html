@@ -112,7 +112,8 @@
     <p>
       Writer Merge Document Tool adds a simple document-generation workflow to Zoho Bigin.
       Once a Zoho Writer merge template has been configured, you can generate a PDF directly
-      from a Bigin Pipeline record with a single click.
+      from a Bigin Pipeline record with a single click. You can generate a standard PDF or enable
+      fillable PDF output to preserve interactive fields from your Writer template.
     </p>
 
     <p>
@@ -145,6 +146,7 @@
       <li>Copy the full URL from your browser's address bar while the Writer document is open.</li>
       <li>In Bigin, open <strong>Writer Merge Settings</strong>.</li>
       <li>Paste the full Writer document URL into the Writer merge template field.</li>
+      <li>Leave <strong>Generate fillable PDF</strong> unchecked for a standard PDF, or check it to preserve Writer fillable fields.</li>
       <li>Click <strong>Save Settings</strong>.</li>
     </ol>
 
@@ -156,6 +158,38 @@
     <p>
       After the setting has been saved, Writer Merge Settings may display the Writer document ID rather than the full URL.
     </p>
+
+    <h3>Choose standard or fillable PDF output</h3>
+    <p>
+      In <strong>Writer Merge Settings</strong>, the <strong>Generate fillable PDF</strong> checkbox controls
+      the output for future merges and regenerations. It is off by default and is saved with your
+      organisation's template settings.
+    </p>
+    <ul>
+      <li><strong>Unchecked:</strong> generates a standard PDF with static content.</li>
+      <li><strong>Checked:</strong> generates a PDF that preserves supported Writer fillable fields for manual completion.</li>
+    </ul>
+    <p>
+      To use fillable output, add <strong>Writer fillable fields</strong> to the template wherever you want
+      someone to enter information in the PDF. Your Bigin merge fields can continue to populate customer
+      and record details automatically. Ordinary text, blank lines and merge fields do not become
+      interactive merely because the checkbox is enabled.
+    </p>
+    <p>
+      Click <strong>Save Settings</strong> after changing the checkbox. Changing this setting does not
+      convert PDFs that already exist: <strong>View Existing</strong> opens the stored PDF, while
+      <strong>Regenerate</strong> produces a new version using the current setting.
+    </p>
+    <p>
+      To complete a fillable PDF, download it from WorkDrive and open it in a PDF application that supports
+      filling and saving PDF forms. Information entered into the PDF is not automatically written back
+      to Bigin. Saving a downloaded copy also does not automatically update the file stored in WorkDrive.
+    </p>
+    <div class="note">
+      <strong>Before regenerating a completed form:</strong> Save a separate copy if you need to keep
+      information entered into the PDF. Regeneration creates a new document from the Writer template
+      and current Bigin data; it does not carry over entries made manually in the previous PDF.
+    </div>
 
     <h2>4. Generate a document</h2>
     <ol>
@@ -279,6 +313,20 @@
       Open the file in WorkDrive and confirm that you are viewing the latest version of the document.
     </p>
 
+    <h3>The PDF fields are not fillable</h3>
+    <p>
+      Confirm that <strong>Generate fillable PDF</strong> is checked in Writer Merge Settings and click
+      <strong>Save Settings</strong>. Check that the Writer template contains actual fillable fields,
+      then use <strong>Regenerate</strong> if a PDF already exists for the record. Download the resulting
+      PDF and open it in an application that supports PDF forms; a preview may not support filling them.
+    </p>
+
+    <h3>The fillable PDF setting cannot be loaded or saved</h3>
+    <p>
+      Close and reopen Writer Merge Settings and confirm that the required connections are authorised.
+      If the problem persists after updating the Topping, contact support with the error message.
+    </p>
+
     <h3>Permission or authentication errors</h3>
     <p>
       Confirm that the Zoho account installing the Topping has access to Bigin, Writer and WorkDrive and that the
@@ -297,8 +345,9 @@
     </p>
 
     <p>
-      The Topping stores the configured Writer template identifier and the Zoho API domain for the user's data centre
-      as organisation-level configuration in Bigin. It does not create custom Pipeline fields for merge tracking.
+      The Topping stores the configured Writer template identifier, the Zoho API domain for the user's data centre,
+      and the fillable PDF preference as organisation-level configuration in Bigin. It does not create custom
+      Pipeline fields for merge tracking.
     </p>
 
     <p>
