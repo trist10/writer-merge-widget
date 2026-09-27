@@ -55,6 +55,29 @@
             border-radius: 4px;
         }
 
+        .checkbox-setting {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 20px;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+
+        .checkbox-setting input {
+            width: auto;
+            margin: 4px 0 0;
+        }
+
+        .checkbox-setting strong {
+            display: block;
+        }
+
+        .checkbox-setting small {
+            display: block;
+            color: #555;
+        }
+
         button {
             margin-top: 16px;
             padding: 9px 18px;
@@ -106,10 +129,19 @@
 
     <input
         id="templateInput"
+        disabled
         type="text"
         placeholder="Paste your Zoho Writer document URL">
 
-    <button id="saveButton">Save Settings</button>
+    <label class="checkbox-setting" for="fillablePdfInput">
+        <input id="fillablePdfInput" type="checkbox" disabled>
+        <span>
+            <strong>Generate fillable PDF</strong>
+            <small>Preserve Writer fillable fields in the generated PDF.</small>
+        </span>
+    </label>
+
+    <button id="saveButton" disabled>Save Settings</button>
 
     <div id="status"></div>
 
@@ -118,6 +150,19 @@
             "writermerge__writer_settings_function";
 
         let currentApiDomain = null;
+        let settingsLoaded = false;
+
+        function setBusy(busy) {
+            ["templateInput", "fillablePdfInput", "saveButton"].forEach(function(id) {
+                document.getElementById(id).disabled = busy;
+            });
+        }
+
+        function parseFillablePdf(value) {
+            if (value === true || value === "true") return true;
+            if (value === false || value === "false") return false;
+            return null;
+        }
 
         function setStatus(message, type) {
             const status =
@@ -242,11 +287,13 @@
         }
 
         function loadSettings() {
+            settingsLoaded = false;
+            setBusy(true);
             setStatus(
                 "Loading current settings..."
             );
 
-            executeSettingsFunction({
+            return executeSettingsFunction({
                 action: "get"
             })
             .then(function(response) {
@@ -258,8 +305,15 @@
                 if (
                     response.status === "success"
                 ) {
-                    currentApiDomain =
-                        response.api_domain || null;
+                    const fillablePdf = parseFillablePdf(response.fillable_pdf);
+                    if (fillablePdf === null) {
+                        setStatus("Unable to load the fillable PDF setting. Update the topping's settings function and reopen this page.", "error");
+                        return;
+                    }
+                    currentApiDomain = response.api_domain || null;
+                    document.getElementById("fillablePdfInput").checked = fillablePdf;
+                    settingsLoaded = true;
+                    setBusy(false);
 
                     if (response.template_id) {
                         document
@@ -281,7 +335,7 @@
                 else {
                     setStatus(
                         response.message ||
-                        "Unable to load the current Writer template.",
+                        "Unable to load the settings. Reopen this page to try again.",
                         "error"
                     );
                 }
@@ -293,7 +347,7 @@
                 );
 
                 setStatus(
-                    "Unable to load the current Writer template.",
+                    "Unable to load the settings. Reopen this page to try again.",
                     "error"
                 );
             });
@@ -304,10 +358,11 @@
             .addEventListener(
                 "click",
                 function() {
-                    const button =
-                        document.getElementById(
-                            "saveButton"
-                        );
+                    if (!settingsLoaded || document.getElementById("saveButton").disabled) {
+                        return;
+                    }
+                    const requestedFillablePdf =
+                        document.getElementById("fillablePdfInput").checked;
 
                     const rawValue =
                         document.getElementById(
@@ -340,7 +395,7 @@
                         return;
                     }
 
-                    button.disabled = true;
+                    setBusy(true);
 
                     setStatus(
                         "Saving settings..."
@@ -351,7 +406,8 @@
                         template_id:
                             settings.documentId,
                         api_domain:
-                            settings.apiDomain
+                            settings.apiDomain,
+                        fillable_pdf: requestedFillablePdf
                     })
                     .then(function(response) {
                         console.log(
@@ -359,15 +415,21 @@
                             response
                         );
 
-                        button.disabled = false;
 
                         if (
                             response.status ===
                             "success"
                         ) {
+                            const savedFillablePdf = parseFillablePdf(response.fillable_pdf);
+                            if (savedFillablePdf !== requestedFillablePdf) {
+                                setStatus("The fillable PDF setting was not confirmed. Reopen settings and try again.", "error");
+                                return;
+                            }
                             currentApiDomain =
                                 response.api_domain ||
                                 settings.apiDomain;
+
+                            document.getElementById("fillablePdfInput").checked = savedFillablePdf;
 
                             document
                                 .getElementById(
@@ -378,20 +440,19 @@
                                     settings.documentId;
 
                             setStatus(
-                                "Writer template saved successfully.",
+                                "Writer Merge settings saved successfully.",
                                 "success"
                             );
                         }
                         else {
                             setStatus(
                                 response.message ||
-                                "Unable to save the Writer template.",
+                                "Unable to save the Writer Merge settings.",
                                 "error"
                             );
                         }
                     })
                     .catch(function(error) {
-                        button.disabled = false;
 
                         console.error(
                             "Unable to save settings:",
@@ -399,9 +460,12 @@
                         );
 
                         setStatus(
-                            "Unable to save the Writer template.",
+                            "Unable to save the Writer Merge settings.",
                             "error"
                         );
+                    })
+                    .finally(function() {
+                        setBusy(false);
                     });
                 }
             );
